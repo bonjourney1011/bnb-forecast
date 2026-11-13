@@ -1,0 +1,70 @@
+name: daily-forecast
+on:
+  schedule:
+    - cron: "23 1 * * *"   # 01:23 UTC, after the daily candle closes at 00:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["web/**"]
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  issues: write
+concurrency:
+  group: daily-forecast
+  cancel-in-progress: false
+jobs:
+  forecast-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      PYTHONUTF8: "1"
+      TABPFN_DISABLE_TELEMETRY: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        if: github.event_name != 'push'
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - uses: actions/cache@v4
+        if: github.event_name != 'push'
+        with:
+          path: ~/.cache/huggingface
+          key: hf-chronos-2
+      - name: Fetch, forecast, score matured forecasts
+        if: github.event_name != 'push'
+        env:
+          TABPFN_TOKEN: ${{ secrets.TABPFN_TOKEN }}
+        run: |
+          uv sync --frozen --no-dev
+          uv run bnbforecast daily
+      - name: Commit data
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "bnb-forecast-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/market data/forecast-log.csv web/data
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "data: daily forecast $(date -u +%Y-%m-%d)"
+          git pull --rebase --autostash origin main
+          git push || (git pull --rebase origin main && git push)
+      # Deploy here: a push made with GITHUB_TOKEN does not trigger other workflows.
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Open issue on failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --title "Daily forecast failed $(date -u +%Y-%m-%d)" \
+            --body "See run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" || true

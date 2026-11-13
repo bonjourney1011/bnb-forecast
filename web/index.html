@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="A 30-day probabilistic BNB price forecast, scored honestly against a random walk.">
+  <title>BNB 30-Day Forecast</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+  <script type="module" src="assets/js/main.js"></script>
+</head>
+<body>
+<main class="page">
+  <header class="masthead">
+    <p class="eyebrow">Probabilistic forecast · updated daily</p>
+    <h1>Where could BNB be in 30 days?</h1>
+    <p class="lede">A range with probabilities, not a single price. Every model here is scored against the simplest possible guess: that the price stays where it is.</p>
+  </header>
+
+  <section class="card" aria-labelledby="now-title">
+    <div class="now">
+      <div>
+        <h2 id="now-title" class="label">BNB / USDT, last daily close</h2>
+        <p class="price" id="price">…</p>
+        <p class="muted" id="as-of">Loading data…</p>
+      </div>
+      <button id="forecast-btn" class="btn" type="button" disabled>Forecast next 30 days</button>
+    </div>
+
+    <div id="forecast" hidden>
+      <div class="tabs" id="model-tabs" role="tablist" aria-label="Forecast model"></div>
+      <div class="tiles">
+        <div class="tile"><p class="label">Median in 30 days</p><p class="num" id="t-median">–</p><p class="muted" id="t-median-sub"></p></div>
+        <div class="tile"><p class="label">80% range</p><p class="num" id="t-range">–</p><p class="muted">4 in 5 outcomes expected inside</p></div>
+        <div class="tile"><p class="label">Chance of a higher price</p><p class="num" id="t-up">–</p><p class="muted">after 30 days, per this model</p></div>
+      </div>
+      <p class="verdict" id="verdict"></p>
+    </div>
+
+    <div class="chart-box"><canvas id="fan-chart" role="img" aria-label="BNB price history and 30-day forecast range"></canvas></div>
+    <details id="fan-table-wrap" hidden>
+      <summary>Forecast as a table</summary>
+      <div class="scroll"><table id="fan-table"></table></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="score-title">
+    <h2 id="score-title">Backtest scoreboard</h2>
+    <p class="muted" id="score-sub"></p>
+    <div class="scroll"><table id="score-table"></table></div>
+    <p class="note">Skill is the improvement in pinball loss over the random walk, averaged over the 1, 3, 7, 14, 21 and 30-day horizons. Above zero beats it; below zero is worse. Coverage should sit near 80%: lower means the range is overconfident. Direction is counted on non-overlapping 30-day windows only, so the sample is small and the interval wide.</p>
+  </section>
+
+  <section class="card" aria-labelledby="live-title">
+    <h2 id="live-title">Live track record</h2>
+    <p class="muted" id="live-sub"></p>
+    <div class="scroll"><table id="live-table"></table></div>
+    <p class="note">Each forecast is logged the day it is made and never edited. Once 30 days pass it is scored against the real price. This is the only evidence that cannot be flattered by hindsight.</p>
+  </section>
+
+  <section class="card" aria-labelledby="trade-title">
+    <h2 id="trade-title">If you had traded on it</h2>
+    <p class="muted" id="trade-sub"></p>
+    <div class="chart-box short"><canvas id="equity-chart" role="img" aria-label="Growth of 1 unit: rule versus buy and hold"></canvas></div>
+    <div class="scroll"><table id="trade-table"></table></div>
+    <p class="note">One fixed rule, set before any result was seen: every 28 days hold BNB when the model's chance of a higher price in 30 days is at least 55%, otherwise hold cash; 0.1% fee per switch. Trades are assumed to fill at the same daily close the signal uses, which is slightly optimistic. A single historical path is weak evidence. It is shown for context, not as a strategy.</p>
+  </section>
+
+  <section class="card prose" aria-labelledby="method-title">
+    <h2 id="method-title">How it works</h2>
+    <ul>
+      <li><strong>Target.</strong> The log return from today to 1, 3, 7, 14, 21 and 30 days ahead, not the price level. Seven quantiles (5% to 95%) are forecast for each horizon and converted back to prices.</li>
+      <li><strong>TabPFN.</strong> A tabular foundation model reads past (day, horizon) rows as context and predicts the return distribution in one forward pass. Features use only data up to the forecast day: BNB momentum and volatility, distance from the one-year high, BTC and ETH momentum, days to the next scheduled quarterly burn.</li>
+      <li><strong>Chronos-2.</strong> A zero-shot time-series foundation model on the log-price series. It was pretrained on public time series, so its backtest on older periods may be flattering.</li>
+      <li><strong>Random walk.</strong> The price stays put; the range is the spread of returns over the previous two years.</li>
+      <li><strong>Backtest.</strong> Weekly forecast dates since January 2021. At each one a model sees only earlier data, and rows whose outcome was not yet known are removed.</li>
+    </ul>
+    <p class="muted">Daily closes: Binance public market data, with Kraken as fallback. Not affiliated with or endorsed by either. This page is a research project and not investment advice. Crypto prices can fall sharply; no model here has been shown to predict direction reliably.</p>
+  </section>
+
+  <footer class="muted footer">Built by Mo Thuan · <a href="https://github.com/bonjourney1011/bnb-forecast">Code and methodology</a> · <a href="https://bonjourney1011.github.io/">Portfolio</a></footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,129 @@
+:root {
+  --paper: #f5f2eb;
+  --card: #fbf9f4;
+  --ink: #16181c;
+  --ink-2: #4a4f57;
+  --ink-3: #737780;
+  --line: #ddd8cc;
+  --accent: #0b6e4f;
+  --accent-ink: #ffffff;
+  --series-1: #0a8a60;
+  --series-2: #4a5fd0;
+  --history: #4a4f57;
+  --radius: 14px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #16181c;
+    --card: #1e2126;
+    --ink: #ecebe6;
+    --ink-2: #b9bbc0;
+    --ink-3: #8b8e95;
+    --line: #33373e;
+    --accent: #33a880;
+    --accent-ink: #0d1512;
+    --series-1: #33a880;
+    --series-2: #6f8fe6;
+    --history: #b9bbc0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.55 "IBM Plex Sans", system-ui, sans-serif;
+}
+
+.page { max-width: 880px; margin: 0 auto; padding: 32px 16px 48px; }
+
+h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(1.9rem, 5vw, 2.8rem); text-wrap: balance; }
+h2 { font-size: 1.35rem; margin-bottom: 4px; }
+
+.eyebrow, .label {
+  font: 500 0.75rem/1.3 "IBM Plex Mono", monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 8px;
+}
+h2.label { font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+
+.lede { color: var(--ink-2); max-width: 62ch; margin: 12px 0 0; }
+.muted { color: var(--ink-3); font-size: 0.9rem; margin: 4px 0 0; }
+.note { color: var(--ink-2); font-size: 0.88rem; margin: 14px 0 0; max-width: 72ch; }
+
+.masthead { margin-bottom: 24px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.now { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; }
+.price { font: 600 2.4rem/1 "Fraunces", Georgia, serif; margin: 0; font-variant-numeric: tabular-nums; }
+
+.btn {
+  font: 600 1rem "IBM Plex Sans", sans-serif;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 24px;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:focus-visible, .tab:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 14px; }
+.tab {
+  font: 500 0.88rem "IBM Plex Sans", sans-serif;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.tab[aria-selected="true"] { color: var(--ink); border-color: var(--ink); font-weight: 600; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tile { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.num { font: 600 1.45rem/1.2 "Fraunces", Georgia, serif; margin: 0; font-variant-numeric: tabular-nums; }
+
+.verdict { margin: 14px 0 0; padding: 10px 14px; border-left: 3px solid var(--ink-3); color: var(--ink-2); font-size: 0.92rem; }
+
+.chart-box { position: relative; height: 340px; margin-top: 18px; }
+.chart-box.short { height: 260px; }
+
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
+
+.scroll { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font: 500 0.72rem "IBM Plex Mono", monospace; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); }
+td.empty { text-align: left; color: var(--ink-3); white-space: normal; }
+
+.prose ul { padding-left: 20px; margin: 10px 0; }
+.prose li { margin-bottom: 8px; color: var(--ink-2); }
+.prose strong { color: var(--ink); }
+
+a { color: var(--accent); }
+.footer { margin-top: 28px; text-align: center; }
+
+@media (max-width: 640px) {
+  .tiles { grid-template-columns: 1fr; }
+  .btn { width: 100%; }
+  .chart-box { height: 280px; }
+  .card { padding: 16px; }
+}

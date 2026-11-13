@@ -1,0 +1,46 @@
+[project]
+name = "bnb-forecast"
+version = "0.1.0"
+description = "30-day probabilistic BNB price forecast with an honest backtest scoreboard"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "requests>=2.32",
+    "typer>=0.12",
+    "tabpfn-client>=0.6.0",
+    "chronos-forecasting>=2.0",
+    "torch>=2.5",
+]
+
+[project.scripts]
+bnbforecast = "bnbforecast.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bnbforecast"]
+
+# CPU-only torch: the default Linux wheel bundles CUDA (several GB) and CI has no GPU.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
