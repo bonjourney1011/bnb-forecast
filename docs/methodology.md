@@ -61,10 +61,19 @@ the baseline agree.
 | Random walk | 0.0% | 0.0% | 82% | no view |
 | Random walk with drift | −0.6% | −1.6% | 81% | 49% |
 | Chronos-2 | −2.7% | −2.6% | 79% | 48% |
-| TabPFN | pending API token | | | |
+| TabPFN (v3.5 API, 13 Nov 2026) | −11.8% | −20.1% | 58% | 52% |
 
-Reading: neither challenger beats the random walk. BNB rose in 54% of the 30-day windows, so a direction accuracy
-near 50% is no edge. The ranges, however, are well calibrated, and that is the usable part.
+Reading: no challenger beats the random walk. BNB rose in 54% of the 30-day windows, so a direction accuracy near
+50% is no edge. The random walk and Chronos-2 ranges are well calibrated, and that is the usable part.
+
+TabPFN in this design is clearly worse and overconfident: its 80% range is a third narrower than the random walk's
+(0.35 vs 0.52 in log return at 30 days) and holds the outcome only 58% of the time. Likely cause: context rows are
+daily and their 30-day targets overlap, so neighbouring rows are near-duplicates. The model treats them as many
+independent confirmations of the most recent regime and extrapolates it with false confidence. It beat the baseline
+only at the 1-day horizon (+1.0%) and in 2023. Chronos-2 therefore stays the headline model on the site.
+
+A second design (non-overlapping context rows, or volatility-scaled targets) is a candidate, but it would be chosen
+after seeing these results, so it must be reported as a second attempt and judged mainly on the live log.
 
 ## 7. Change log
 

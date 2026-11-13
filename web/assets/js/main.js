@@ -16,7 +16,11 @@ function verdictText(model) {
   const head = skill > 0.01
     ? `In the backtest this model beat the random walk by ${pct(skill, 1)}.`
     : `In the backtest this model did not beat the random walk (skill ${signedPct(skill)}).`;
-  return `${head} Its 80% range held the real 30-day outcome ${pct(cov)} of the time over ${s.origins} forecasts. Use the range to size risk; do not read the median as a call on direction.`;
+  const held = `Its 80% range held the real 30-day outcome ${pct(cov)} of the time over ${s.origins} forecasts.`;
+  const advice = cov < 0.7
+    ? "That is far below 80%: this model is overconfident and its range is too narrow to rely on."
+    : "Use the range to size risk; do not read the median as a call on direction.";
+  return `${head} ${held} ${advice}`;
 }
 
 function renderForecast() {
@@ -97,7 +101,7 @@ function renderLive() {
 
 function renderTrading() {
   const full = state.summary.models.random_walk.origins;
-  const pick = ["tabpfn", "chronos2", "random_walk_drift"].find((m) => {
+  const pick = [state.forecast.track_model, "chronos2", "random_walk_drift"].find((m) => {
     const s = state.summary.models[m];
     return s && s.trading && s.origins === full; // never promote a partial backtest
   });
