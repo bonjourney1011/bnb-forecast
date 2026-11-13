@@ -7,3 +7,6 @@ __pycache__/
 .env.*
 plans/
 *.log
+
+# local secret notes, never commit
+docs/token_priorlab.md
