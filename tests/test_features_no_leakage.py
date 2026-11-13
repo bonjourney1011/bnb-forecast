@@ -59,3 +59,13 @@ def test_query_has_one_row_per_horizon(closes):
 def test_days_to_burn_counts_down_to_the_15th():
     idx = pd.to_datetime(["2026-01-10", "2026-01-15", "2026-01-16", "2026-12-20"])
     assert list(features.days_to_next_burn(idx)) == [5, 0, 89, 26]
+
+
+def test_sparse_context_has_non_overlapping_targets(closes):
+    table = features.build_table(closes)
+    origin = closes.index[700]
+    ctx = features.context_rows(table, origin, sparse=True)
+    assert (ctx["target_date"] <= origin).all()
+    for h, g in ctx.groupby("h"):
+        gaps = g["t"].sort_values().diff().dropna().dt.days
+        assert (gaps == h).all()  # consecutive rows are exactly one horizon apart

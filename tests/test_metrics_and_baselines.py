@@ -52,3 +52,23 @@ def test_random_walk_has_zero_median_and_drift_keeps_it(closes):
     # Longer horizons must have wider bands.
     width = rw[:, -1] - rw[:, 0]
     assert width[-1] > width[0]
+
+
+def test_diebold_mariano_detects_a_real_difference_only():
+    rng = np.random.default_rng(0)
+    base = rng.normal(1.0, 0.2, 300)
+    assert metrics.diebold_mariano(base + 0.2, base + rng.normal(0, 0.05, 300), lags=5) < 0.01
+    assert metrics.diebold_mariano(base + rng.normal(0, 0.05, 300), base, lags=5) > 0.05
+
+
+def test_arima_and_delta_rf_shapes_and_ordering(closes, monkeypatch):
+    from bnbforecast.models import arima_baseline, delta_random_forest
+
+    monkeypatch.setitem(delta_random_forest.PARAMS, "n_estimators", 20)  # keep the test fast
+    log_closes = np.log(closes)
+    a = arima_baseline.predict(log_closes[settings.TARGET], settings.HORIZONS, settings.QUANTILES)
+    r = delta_random_forest.predict(log_closes, [1, 30], settings.QUANTILES)
+    assert a.shape == (len(settings.HORIZONS), len(settings.QUANTILES))
+    assert r.shape == (2, len(settings.QUANTILES))
+    assert (np.diff(a, axis=1) > 0).all() and (np.diff(r, axis=1) >= 0).all()
+    assert (a[-1, -1] - a[-1, 0]) > (a[0, -1] - a[0, 0])  # uncertainty grows with horizon

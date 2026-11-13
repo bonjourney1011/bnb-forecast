@@ -11,6 +11,8 @@ dependencies = [
     "tabpfn-client>=0.6.0",
     "chronos-forecasting>=2.0",
     "torch>=2.5",
+    "statsmodels>=0.14",
+    "scikit-learn>=1.5",
 ]
 
 [project.scripts]

@@ -27,7 +27,11 @@ TRADE_P_UP_THRESHOLD = 0.55
 TRADE_REBALANCE_EVERY = 4  # weekly origins -> every 28 days
 TRADE_FEE = 0.001  # per side
 
-MODELS = ["random_walk", "random_walk_drift", "chronos2", "tabpfn"]
+MODELS = [
+    "random_walk", "random_walk_drift", "arima", "delta_rf", "chronos2",
+    "tabpfn", "tabpfn_sparse", "tabpfn_calendar",
+]  # fmt: skip
+TABPFN_MODELS = {"tabpfn", "tabpfn_sparse", "tabpfn_calendar"}
 # Headline model on the site and in the live track record. Fixed here, not chosen per day,
 # and only changed after a model has a complete backtest (log the change in methodology.md).
 PRIMARY_MODEL = "chronos2"
@@ -35,8 +39,12 @@ PRIMARY_MODEL = "chronos2"
 MODEL_LABELS = {
     "random_walk": "Random walk (no change)",
     "random_walk_drift": "Random walk with drift",
+    "arima": "ARIMA(0,1,1)",
+    "delta_rf": "Delta-Random Forest",
     "chronos2": "Chronos-2 (zero-shot)",
-    "tabpfn": "TabPFN (tabular regression)",
+    "tabpfn": "TabPFN v1 (daily rows)",
+    "tabpfn_sparse": "TabPFN v2 (non-overlapping rows)",
+    "tabpfn_calendar": "TabPFN v2 + calendar features",
 }
 
 

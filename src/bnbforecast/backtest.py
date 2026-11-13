@@ -43,12 +43,20 @@ def predict_at(model: str, origin: pd.Timestamp, closes: pd.DataFrame, table: pd
         from bnbforecast.models import chronos_zero_shot
 
         return chronos_zero_shot.predict(log_close, settings.HORIZONS, settings.QUANTILES)
-    if model == "tabpfn":
+    if model == "arima":
+        from bnbforecast.models import arima_baseline
+
+        return arima_baseline.predict(log_close, settings.HORIZONS, settings.QUANTILES)
+    if model == "delta_rf":
+        from bnbforecast.models import delta_random_forest
+
+        return delta_random_forest.predict(np.log(closes.loc[:origin]), settings.HORIZONS, settings.QUANTILES)
+    if model in settings.TABPFN_MODELS:
         from bnbforecast.models import tabpfn_regressor
 
-        return tabpfn_regressor.predict(
-            features.context_rows(table, origin), features.query_rows(table, origin), settings.QUANTILES
-        )
+        context = features.context_rows(table, origin, sparse=model != "tabpfn")
+        columns = features.FEATURES_CALENDAR if model == "tabpfn_calendar" else features.FEATURES
+        return tabpfn_regressor.predict(context, features.query_rows(table, origin), settings.QUANTILES, columns)
     raise ValueError(f"unknown model: {model}")
 
 

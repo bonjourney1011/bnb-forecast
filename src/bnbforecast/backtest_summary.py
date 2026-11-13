@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from statsmodels.stats.multitest import multipletests
 
 from bnbforecast import metrics, settings
 from bnbforecast.backtest import load_predictions
@@ -32,6 +33,15 @@ def _score(df: pd.DataFrame, ref: pd.DataFrame) -> dict:
         "coverage_50": metrics.coverage(actual, preds[:, col[0.25]], preds[:, col[0.75]]),
         "width_80": float(np.mean(preds[:, col[0.9]] - preds[:, col[0.1]])),
     }
+
+
+def _dm_30d(d30: pd.DataFrame, r30: pd.DataFrame) -> float:
+    """DM p-value on 30-day pinball loss vs the random walk. Weekly origins with a 30-day
+    target overlap for 4 steps, hence 5 Newey-West lags."""
+    a, b = d30.sort_values("origin"), r30.sort_values("origin")
+    return metrics.diebold_mariano(
+        metrics.pinball_per_row(*_arrays(a), Q), metrics.pinball_per_row(*_arrays(b), Q), lags=5
+    )
 
 
 def _direction(df30: pd.DataFrame) -> dict:
@@ -74,6 +84,13 @@ def summarize(closes: pd.DataFrame) -> dict:
             "mean_skill_vs_rw": float(np.mean([v["skill_vs_rw"] for v in by_h.values()])),
             "skill_30d_by_year": by_year,
             "direction_30d": _direction(d30),
+            "dm_p_30d": _dm_30d(d30, r30),
             "trading": simulate(d30, closes),
         }
+    # Holm adjustment across every challenger, as in the walk-forward robusta study.
+    names = [m for m in out["models"] if m != "random_walk"]
+    if names:
+        adjusted = multipletests([out["models"][m]["dm_p_30d"] for m in names], method="holm")[1]
+        for m, p in zip(names, adjusted, strict=True):
+            out["models"][m]["dm_p_30d_holm"] = float(p)
     return out

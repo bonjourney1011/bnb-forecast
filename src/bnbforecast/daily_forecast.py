@@ -39,7 +39,7 @@ def make_forecast(closes: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     """Returns (payload for latest-forecast.json, new log rows)."""
     origin, table = closes.index[-1], features.build_table(closes)
     price = float(closes[settings.TARGET].iloc[-1])
-    models = [m for m in settings.MODELS if m != "tabpfn" or tabpfn_regressor.available()]
+    models = [m for m in settings.MODELS if m not in settings.TABPFN_MODELS or tabpfn_regressor.available()]
     blocks, errors, log_rows = {}, {}, []
     for model in models:
         try:

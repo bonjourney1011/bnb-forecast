@@ -7,8 +7,8 @@ Live site: https://bonjourney1011.github.io/bnb-forecast/
 ## What it does
 
 - Forecasts seven quantiles (5% to 95%) of the BNB log return at 1, 3, 7, 14, 21 and 30 days.
-- Compares three approaches: **TabPFN** (tabular foundation model, hosted API), **Chronos-2** (zero-shot time-series
-  foundation model, CPU) and a **random walk** baseline.
+- Compares **TabPFN** (tabular foundation model, hosted API, two designs), **Chronos-2** (zero-shot time-series
+  foundation model, CPU), **ARIMA(0,1,1)**, a **Delta-Random Forest**, and **random walk** baselines.
 - Backtests every model on weekly forecast dates since January 2021, with no look-ahead.
 - Logs each daily forecast and scores it once the outcome is known.
 
@@ -19,7 +19,7 @@ The point of the project is the scoreboard. If a model does not beat "the price 
 ```
 uv sync
 uv run bnbforecast fetch                 # daily closes since 2017
-uv run bnbforecast backtest random_walk  # also: random_walk_drift, chronos2, tabpfn
+uv run bnbforecast backtest random_walk  # also: random_walk_drift, arima, delta_rf, chronos2, tabpfn, tabpfn_sparse, tabpfn_calendar
 uv run bnbforecast summarize             # web/data/backtest-summary.json
 uv run bnbforecast daily                 # latest forecast + forecast log
 uv run pytest

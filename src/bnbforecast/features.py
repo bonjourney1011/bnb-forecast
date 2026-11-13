@@ -21,6 +21,9 @@ FEATURES = [
     "days_to_burn",
     "h",
 ]  # fmt: skip
+# Second design (added after the first TabPFN backtest, see methodology section 7).
+CALENDAR = ["day_of_week", "day_of_month", "month", "target_day_of_week"]
+FEATURES_CALENDAR = FEATURES + CALENDAR
 
 
 def days_to_next_burn(index: pd.DatetimeIndex) -> np.ndarray:
@@ -47,6 +50,9 @@ def build_features(closes: pd.DataFrame) -> pd.DataFrame:
         for n in (7, 30):
             f[f"{name}_ret_{n}"] = lc[sym].diff(n)
     f["days_to_burn"] = days_to_next_burn(closes.index)
+    f["day_of_week"] = closes.index.dayofweek
+    f["day_of_month"] = closes.index.day
+    f["month"] = closes.index.month
     return f.dropna()
 
 
@@ -61,14 +67,22 @@ def build_table(closes: pd.DataFrame, horizons: list[int] | None = None) -> pd.D
         part["h"] = h
         part["y"] = (bnb.shift(-h) - bnb).reindex(part.index)
         part["target_date"] = part.index + pd.Timedelta(days=h)
+        part["target_day_of_week"] = part["target_date"].dt.dayofweek
         parts.append(part)
     table = pd.concat(parts).rename_axis("t").reset_index()
     return table.sort_values(["t", "h"], ignore_index=True)
 
 
-def context_rows(table: pd.DataFrame, origin: pd.Timestamp) -> pd.DataFrame:
-    """Rows usable as context at `origin`: outcome already observed on or before the origin."""
-    return table[(table["target_date"] <= origin) & table["y"].notna()]
+def context_rows(table: pd.DataFrame, origin: pd.Timestamp, sparse: bool = False) -> pd.DataFrame:
+    """Rows usable as context at `origin`: outcome already observed on or before the origin.
+
+    `sparse` keeps, for each horizon h, only rows spaced h days apart (counted back from the
+    origin), so their target windows do not overlap. Daily rows with overlapping 30-day
+    targets are near-duplicates and made the first TabPFN design overconfident."""
+    ctx = table[(table["target_date"] <= origin) & table["y"].notna()]
+    if sparse:
+        ctx = ctx[(origin - ctx["target_date"]).dt.days % ctx["h"] == 0]
+    return ctx
 
 
 def query_rows(table: pd.DataFrame, origin: pd.Timestamp) -> pd.DataFrame:

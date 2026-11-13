@@ -44,3 +44,24 @@ def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, flo
 def max_drawdown(equity: np.ndarray) -> float:
     peaks = np.maximum.accumulate(equity)
     return float(np.min(equity / peaks - 1))
+
+
+def pinball_per_row(actual: np.ndarray, preds: np.ndarray, quantiles: list[float]) -> np.ndarray:
+    q = np.asarray(quantiles)[None, :]
+    diff = actual[:, None] - preds
+    return np.maximum(q * diff, (q - 1) * diff).mean(axis=1)
+
+
+def diebold_mariano(loss_model: np.ndarray, loss_ref: np.ndarray, lags: int) -> float:
+    """Two-sided Diebold-Mariano p-value for equal expected loss. The variance uses a
+    Newey-West (Bartlett) estimator with `lags` lags, because forecasts whose target windows
+    overlap have autocorrelated errors. A small p-value means the two models really differ."""
+    d = loss_model - loss_ref
+    n, centred = len(d), d - d.mean()
+    var = centred @ centred / n
+    for k in range(1, min(lags, n - 1) + 1):
+        var += 2 * (1 - k / (lags + 1)) * (centred[k:] @ centred[:-k]) / n
+    if var <= 0:
+        return 1.0
+    stat = d.mean() / math.sqrt(var / n)
+    return float(math.erfc(abs(stat) / math.sqrt(2)))

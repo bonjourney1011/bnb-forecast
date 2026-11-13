@@ -44,7 +44,8 @@ function renderForecast() {
 }
 
 function renderTabs() {
-  const order = ["tabpfn", "chronos2", "random_walk_drift", "random_walk"].filter((m) => state.forecast.models[m]);
+  const first = state.forecast.primary;
+  const order = [first, ...Object.keys(state.forecast.models).filter((m) => m !== first)];
   $("model-tabs").replaceChildren(
     ...order.map((m) => {
       const b = document.createElement("button");
@@ -66,19 +67,21 @@ function renderScoreboard() {
   $("score-sub").textContent = `${any.origins} weekly forecast dates, ${shortDate(any.first_origin)} to ${shortDate(any.last_origin)}.`;
   fillTable(
     $("score-table"),
-    ["Model", "Verdict", "Skill vs random walk", "30-day skill", "80% range held", "50% range held", "30-day direction", "Forecasts"],
+    ["Model", "Verdict", "Skill vs random walk", "30-day skill", "80% range held", "50% range held", "30-day direction", "Differs from baseline?", "Forecasts"],
     models.map(([m, v]) => {
       const h = v.by_horizon["30"];
       const d = v.direction_30d;
       const verdict = m === "random_walk" ? "Baseline" : v.mean_skill_vs_rw > 0.01 ? "✓ Beats baseline" : "✗ Does not beat baseline";
+      const p = v.dm_p_30d_holm;
+      const sig = p == null ? "–" : `${p < 0.05 ? "yes" : "no"} (p=${p < 0.001 ? "<0.001" : p.toFixed(3)})`;
       const dir = d.accuracy == null ? "no view" : `${pct(d.accuracy)} (${pct(d.ci_low)}–${pct(d.ci_high)}, n=${d.n})`;
-      return [s.labels[m], verdict, signedPct(v.mean_skill_vs_rw), signedPct(h.skill_vs_rw), pct(h.coverage_80), pct(h.coverage_50), dir, String(v.origins)];
+      return [s.labels[m], verdict, signedPct(v.mean_skill_vs_rw), signedPct(h.skill_vs_rw), pct(h.coverage_80), pct(h.coverage_50), dir, sig, String(v.origins)];
     }),
   );
-  if (!s.models.tabpfn || s.models.tabpfn.origins < any.origins) {
+  if (models.some(([, v]) => v.origins < any.origins)) {
     const p = document.createElement("p");
     p.className = "muted";
-    p.textContent = "TabPFN backtest not complete yet: it runs through a hosted API with a daily quota. Rows with fewer forecasts are not comparable.";
+    p.textContent = "Some backtests are not complete yet (TabPFN runs through a hosted API with a daily quota). Rows with fewer forecasts are not comparable.";
     $("score-table").parentElement.after(p);
   }
 }

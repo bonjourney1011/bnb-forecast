@@ -31,13 +31,15 @@ def _login() -> None:
     tabpfn_client.set_access_token(token)
 
 
-def predict(context: pd.DataFrame, query: pd.DataFrame, quantiles: list[float]) -> np.ndarray:
+def predict(
+    context: pd.DataFrame, query: pd.DataFrame, quantiles: list[float], columns: list[str] = FEATURES
+) -> np.ndarray:
     """Returns (len(query), len(quantiles)) log returns. `context` needs FEATURES + `y`."""
     _login()
     from tabpfn_client import TabPFNRegressor
 
     model = TabPFNRegressor()
-    model.fit(context[FEATURES], context["y"])
-    preds = model.predict(query[FEATURES], output_type="quantiles", quantiles=quantiles)
+    model.fit(context[columns], context["y"])
+    preds = model.predict(query[columns], output_type="quantiles", quantiles=quantiles)
     # A quantile regressor can cross on rare rows; sorting keeps the fan well-formed.
     return np.sort(np.column_stack([np.asarray(p) for p in preds]), axis=1)
