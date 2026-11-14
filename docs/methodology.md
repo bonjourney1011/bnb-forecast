@@ -67,26 +67,46 @@ trending price is always outside. Returns stay in range.
 Sanity check: the random walk's 80% range should cover about 80%. It covers 82% at 30 days, so the scoring code and
 the baseline agree.
 
-## 6. Results so far (302 origins, 3 Jan 2021 – 11 Oct 2026)
+## 6. Results (302 origins, 3 Jan 2021 – 11 Oct 2026)
 
-| Model | Mean skill vs random walk | 30-day skill | 80% coverage (30d) | Direction (30d, n=61) |
-|---|---|---|---|---|
-| Random walk | 0.0% | 0.0% | 82% | no view |
-| Random walk with drift | −0.6% | −1.6% | 81% | 49% |
-| Chronos-2 | −2.7% | −2.6% | 79% | 48% |
-| TabPFN (v3.5 API, 13 Nov 2026) | −11.8% | −20.1% | 58% | 52% |
+| Model | Mean skill vs random walk | 30-day skill | 80% coverage (30d) | Direction (30d, n≈61) | Differs from baseline? (DM, Holm) |
+|---|---|---|---|---|---|
+| Random walk | 0.0% | 0.0% | 82% | no view | – |
+| Random walk with drift | −0.6% | −1.6% | 81% | 49% | no (p=1.00) |
+| Delta-Random Forest | −0.9% | −1.6% | 89% | 54% | no (p=1.00) |
+| ARIMA(0,1,1) | −1.4% | +0.4% | 86% | 55% | no (p=1.00) |
+| Chronos-2 | −2.7% | −2.6% | 79% | 48% | no (p=1.00) |
+| TabPFN v2 + calendar | −7.8% | −11.9% | 75% | 56% | no (p=0.34) |
+| TabPFN v2 (non-overlapping rows) | −8.0% | −9.8% | 68% | 61% | no (p=0.34) |
+| TabPFN v1 (daily rows) | −11.8% | −20.1% | 58% | 52% | yes, worse (p=0.03) |
 
-Reading: no challenger beats the random walk. BNB rose in 54% of the 30-day windows, so a direction accuracy near
-50% is no edge. The random walk and Chronos-2 ranges are well calibrated, and that is the usable part.
+TabPFN ran on the hosted API (v3.5) on 13–15 Nov 2026.
 
-TabPFN in this design is clearly worse and overconfident: its 80% range is a third narrower than the random walk's
-(0.35 vs 0.52 in log return at 30 days) and holds the outcome only 58% of the time. Likely cause: context rows are
-daily and their 30-day targets overlap, so neighbouring rows are near-duplicates. The model treats them as many
-independent confirmations of the most recent regime and extrapolates it with false confidence. It beat the baseline
-only at the 1-day horizon (+1.0%) and in 2023. Chronos-2 therefore stays the headline model on the site.
+Reading:
 
-A second design (non-overlapping context rows, or volatility-scaled targets) is a candidate, but it would be chosen
-after seeing these results, so it must be reported as a second attempt and judged mainly on the live log.
+- **Nothing beats the random walk.** BNB rose in 54% of the 30-day windows, so direction accuracies of 48–61% on 61
+  windows are all inside each other's confidence intervals (the widest claim, 61%, spans 48–72%).
+- **The classical models sit on top of the baseline**, as in the robusta study: ARIMA and Delta-Random Forest are
+  statistically indistinguishable from it. Their ranges are slightly too wide (86% and 89% coverage against a
+  nominal 80%), which is the safe direction to be wrong in.
+- **Chronos-2 is the best calibrated challenger** (79% and 55% against nominal 80% and 50%) and stays the headline
+  model.
+- **TabPFN v1 was overconfident**: its 80% range was a third narrower than the random walk's and held the outcome
+  58% of the time. Cause: daily context rows with overlapping 30-day targets are near-duplicates, which the model
+  reads as many independent confirmations of the latest regime.
+- **Removing the overlap (v2) fixed about a third of the gap** (mean skill −11.8% to −8.0%, coverage 58% to 68%), and
+  made the difference from the baseline statistically insignificant, but v2 still loses at every horizon.
+- **Calendar features did not add skill.** Mean skill is unchanged (−7.8% against −8.0%), the 30-day skill is
+  worse (−11.9% against −9.8%), and only coverage improves (75% against 68%). Weekday, day-of-month and month
+  carry no usable signal for BNB at these horizons.
+- **The trading rule shows no edge either.** Buy-and-hold returned +1,828% with a 67% drawdown. The rule on TabPFN v2
+  matched it (+1,838%, 60% drawdown) with 37 switches; on every other model it lagged. One path, one asset: this is
+  not evidence of a strategy.
+
+Why a tabular foundation model struggles here, in first-principles terms: it predicts well when the query row
+resembles context rows drawn from the same distribution. Price data drifts, so the most similar context rows are
+the most recent ones, and the model extrapolates the latest regime. The synthetic prior it was pretrained on does
+not include near-random-walk series with fat tails and volatility clustering.
 
 ## 7. Change log
 
